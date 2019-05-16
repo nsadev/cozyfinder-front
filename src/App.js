@@ -6,6 +6,7 @@ import Title from './components/Title/Title';
 import Form from './components/Form/Form';
 import SearchBar from './components/SearchBar/SearchBar';
 import Map from './components/Map/Map';
+import List from './components/List/list';
 
 class App extends Component {
 
@@ -31,11 +32,11 @@ class App extends Component {
 
             // Maps
             latitude: 40.716906,
-            longitude: -73.988429
+            longitude: -73.988429,
+            searchRes: []
 
 
-
-        };
+        }
 
         /** If Bed or Bath value = 0, means no additional filtering, input limited between 1 to 50 **/
 
@@ -82,18 +83,21 @@ class App extends Component {
 
     async searchButton() {
 
-        /** When the button clicked it back end sends all the neighbourhood data of New York. If any of the
+        /** When the button clicked it back-end sends all the neighbourhood data of New York. If any of the
          * received name equal to the one in the searchfield, its GPS location will recorded in the State **/
 
         const {searchField} = this.state;
 
         /**
-         Fetch URL connected to Heroku by default, if you want to run the backend as local
+         Fetch URL connected to Heroku by default, if you want to run the backend as local,
          replace only the domains and keep the path:
          Example: fetch('http://localhost:3000/search/new york')
          **/
-        const response = await fetch('https://cozy-back.herokuapp.com/search/new york');
 
+        //const FETCH_URI = 'https://cozy-back.herokuapp.com/search/new york';
+        const FETCH_URI = 'http://localhost:3000/search/new york';
+
+        const response = await fetch(FETCH_URI);
 
         const data = await response.json();
 
@@ -103,13 +107,20 @@ class App extends Component {
                 const lat = data['resultList'][i]['latitude']['_text']
                 const long = data['resultList'][i]['longitude']['_text']
 
-                console.log(data['resultList'][i]['name']['_text'], lat, long)
+                //console.log(data['resultList'][i]['name']['_text'], lat, long)
 
 
                 this.setState({latitude: lat})
                 this.setState({longitude: long})
             }
-            console.log(data['resultList'][i])     //listing all the New York neighbourhoods infos
+
+
+            if(data['resultList'][i]['zindex']){
+                this.setState({searchRes: [...this.state.searchRes, [data['resultList'][i]['name']['_text'],
+                        data['resultList'][i]['zindex']['_text'] ]] })
+                //console.log(data['resultList'][i]['name']['_text'], data['resultList'][i]['zindex']['_text'])
+
+            }
         }
         console.log(this.state)
 
@@ -117,7 +128,7 @@ class App extends Component {
 
 
     render() {
-        const { route, latitude, longitude } = this.state;
+        const { route, latitude, longitude, searchRes } = this.state;
 
         let SEARCHBAR = <SearchBar searchChange={this.onSearchChange}
                                    bedInput={this.bedInput}
@@ -127,7 +138,7 @@ class App extends Component {
                                    searchButton = {this.searchButton}
         />;
 
-        let MAP = <Map lat={latitude} long={longitude}/>;
+        let MAP = <Map lat={latitude} long={longitude} searchRes={searchRes}/>;
 
         return (
             <div>
@@ -139,6 +150,7 @@ class App extends Component {
                         <LogIn login={this.handleLoginClick} />
                         {SEARCHBAR}
                         {MAP}
+                        <List />
                     </div>
                     : ( route === 'signin'
                             ? <Form submit={this.handleSubmit} />
@@ -148,6 +160,7 @@ class App extends Component {
                                     <Profile />
                                     {SEARCHBAR}
                                     {MAP}
+                                    <List />
                                 </div>
 
                             )
